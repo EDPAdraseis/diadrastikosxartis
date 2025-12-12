@@ -286,24 +286,39 @@
       window.__map = map;
       centerMap([38.159, 23.742], 12);
 
-      const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      let tileErrors = 0;
+      let tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '&copy; OpenStreetMap'
       });
-      tiles.on('load', () => {
+
+      function hideLoading(){
         const ml = document.getElementById('mapLoading');
         if(ml) ml.style.display = 'none';
-      });
-      // Fallback: αν για οποιονδήποτε λόγο δεν έρθει load event
-      setTimeout(() => {
-        const ml = document.getElementById('mapLoading');
-        if(ml) ml.style.display = 'none';
-      }, 1500);
-        if(ml) ml.style.display = 'none';
-      });
+      }
+
+      tiles.on('load', hideLoading);
       tiles.on('tileerror', () => {
-        setStatus('Tiles blocked');
+        tileErrors += 1;
+        setStatus('Tiles error');
+        // Fallback αν μπλοκάρει το OSM
+        if(tileErrors >= 6){
+          try{ map.removeLayer(tiles); } catch(e) {}
+          tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 20,
+            subdomains: 'abcd',
+            attribution: '&copy; OpenStreetMap &copy; CARTO'
+          });
+          tiles.on('load', hideLoading);
+          tiles.addTo(map);
+          hideLoading();
+          setStatus('Tiles OK');
+        }
       });
+
+      // Αν δεν έρθει load event, μην κρατάς overlay για πάντα
+      setTimeout(hideLoading, 1200);
+
       tiles.addTo(map);
 
       // ensure size in grid layouts
