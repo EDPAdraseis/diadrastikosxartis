@@ -271,6 +271,11 @@
     }
     // Map (init only when Leaflet is available)
     function initMap(){
+      // hide loading early in case tiles are delayed
+      setTimeout(() => {
+        const ml = document.getElementById('mapLoading');
+        if(ml) ml.style.display = 'none';
+      }, 800);
       if(!window.L){
         setStatus('Leaflet blocked');
         panelBodyEl.innerHTML = '<div class="hint" style="color:rgba(239,68,68,.95)">Δεν φορτώθηκε το Leaflet (πιθανό μπλοκάρισμα CDN στην προεπισκόπηση). Δοκίμασε σε κανονικό hosting ή πες μου να το κάνω local bundle.</div>';
@@ -287,6 +292,13 @@
       });
       tiles.on('load', () => {
         const ml = document.getElementById('mapLoading');
+        if(ml) ml.style.display = 'none';
+      });
+      // Fallback: αν για οποιονδήποτε λόγο δεν έρθει load event
+      setTimeout(() => {
+        const ml = document.getElementById('mapLoading');
+        if(ml) ml.style.display = 'none';
+      }, 1500);
         if(ml) ml.style.display = 'none';
       });
       tiles.on('tileerror', () => {
