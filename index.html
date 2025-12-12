@@ -9,51 +9,87 @@
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <style>
-body{margin:0;background:#0b0f14;color:#e8edf6;font-family:system-ui}
-#map{height:100vh}
-.panel{
-  position:fixed;right:10px;top:10px;width:340px;
-  background:#111827;border:1px solid rgba(255,255,255,.1);
-  border-radius:14px;padding:12px;z-index:1000
-}
-.btn{padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.15);
-background:#1f2937;color:#fff;cursor:pointer;font-weight:600}
-.btn.primary{background:#166534}
-.btn.danger{background:#7f1d1d}
-.btn.soft{background:#1e3a8a}
-.controls{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
-.field{margin-top:6px}
-input,textarea{
-  width:100%;padding:8px;border-radius:10px;border:1px solid rgba(255,255,255,.15);
-  background:#020617;color:#fff
-}
-textarea{min-height:70px}
-.modal{
-  position:fixed;inset:0;background:rgba(0,0,0,.45);
-  display:none;align-items:center;justify-content:center;z-index:2000
-}
-.modal.open{display:flex}
-.modal-card{
-  width:600px;max-width:95%;background:#020617;
-  border-radius:16px;border:1px solid rgba(255,255,255,.1);padding:12px
-}
-.compass{
-  position:absolute;left:10px;top:10px;width:50px;height:50px;
-  border-radius:50%;background:rgba(0,0,0,.5);
-  display:flex;align-items:center;justify-content:center;z-index:500
-}
-.needle{
-  width:0;height:0;border-left:6px solid transparent;
-  border-right:6px solid transparent;border-bottom:18px solid red
-}
+  :root{
+    --bg:#0b0f14; --panel:#111827; --panel2:#0b1220;
+    --text:#e8edf6; --muted:#a6b2c5; --border:rgba(255,255,255,.12);
+    --shadow: 0 10px 30px rgba(0,0,0,.35);
+  }
+  body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui}
+  #map{height:100vh}
+  .panel{
+    position:fixed;right:10px;top:10px;width:340px;
+    background:linear-gradient(180deg, rgba(17,24,39,.95), rgba(2,6,23,.92));
+    border:1px solid var(--border);
+    border-radius:14px;padding:12px;z-index:1000;
+    box-shadow:var(--shadow)
+  }
+  .btn{
+    padding:9px 11px;border-radius:10px;border:1px solid rgba(255,255,255,.16);
+    background:rgba(255,255,255,.06);color:#fff;cursor:pointer;font-weight:700;
+    font-size:13px
+  }
+  .btn.primary{background:rgba(34,197,94,.18);border-color:rgba(34,197,94,.25)}
+  .btn.danger{background:rgba(239,68,68,.18);border-color:rgba(239,68,68,.25)}
+  .btn.soft{background:rgba(59,130,246,.16);border-color:rgba(59,130,246,.25)}
+  .controls{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .hint{margin-top:8px;font-size:13px;color:var(--muted);line-height:1.35}
+
+  .modal{
+    position:fixed;inset:0;background:rgba(0,0,0,.45);
+    display:none;align-items:center;justify-content:center;z-index:2000;
+    padding:12px
+  }
+  .modal.open{display:flex}
+  .modal-card{
+    width:680px;max-width:98%;
+    background:rgba(2,6,23,.98);
+    border-radius:16px;border:1px solid var(--border);
+    padding:12px; box-shadow:var(--shadow)
+  }
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .field{margin-top:8px}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+  input,textarea{
+    width:100%;padding:9px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.16);
+    background:rgba(255,255,255,.05);color:#fff;outline:none;font-size:13px
+  }
+  textarea{min-height:80px;resize:vertical}
+
+  .sizes{
+    display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;
+    padding:10px;border:1px solid rgba(255,255,255,.10);border-radius:12px;
+    background:rgba(255,255,255,.03)
+  }
+  .sizeItem{
+    display:flex;align-items:center;gap:8px;
+    padding:8px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.10);
+    background:rgba(255,255,255,.03);cursor:pointer;user-select:none
+  }
+  .sizeItem input{width:16px;height:16px;margin:0}
+  .sizeItem small{color:var(--muted);font-weight:600}
+
+  .compass{
+    position:absolute;left:10px;top:10px;width:50px;height:50px;
+    border-radius:50%;background:rgba(0,0,0,.5);
+    display:flex;align-items:center;justify-content:center;z-index:500;
+    border:1px solid rgba(255,255,255,.12)
+  }
+  .needle{
+    width:0;height:0;border-left:6px solid transparent;
+    border-right:6px solid transparent;border-bottom:18px solid #ef4444
+  }
+
+  @media (max-width: 860px){
+    .panel{right:8px;left:8px;width:auto}
+    .row{grid-template-columns:1fr}
+  }
 </style>
 </head>
 
 <body>
 
 <div id="map"></div>
-
-<div class="compass"><div class="needle" id="needle"></div></div>
+<div class="compass" title="Πυξίδα"><div class="needle" id="needle"></div></div>
 
 <div class="panel" id="sidePanel">
   <b>AI Βοηθός Πάρνηθας</b>
@@ -63,95 +99,318 @@ textarea{min-height:70px}
     <button class="btn danger" onclick="stopGPS()">Stop</button>
     <button class="btn" onclick="openCode()">POI (κωδικός)</button>
   </div>
-  <div id="info" style="margin-top:8px;font-size:13px;color:#a6b2c5"></div>
+  <div class="hint" id="info">Πάτα σε POI για πληροφορίες. Με το POI (κωδικός) ανοίγει φόρμα.</div>
 </div>
 
 <div class="modal" id="modal">
   <div class="modal-card">
-    <b>Νέο POI</b>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+      <b>Νέο POI</b>
+      <button class="btn danger" onclick="closeModal()">Κλείσιμο</button>
+    </div>
 
-    <div class="field"><input id="pid" placeholder="ID"></div>
-    <div class="field"><input id="ptitle" placeholder="Τίτλος"></div>
-    <div class="field"><input id="plat" placeholder="Latitude"></div>
-    <div class="field"><input id="plng" placeholder="Longitude"></div>
-    <div class="field"><input id="ppng" placeholder="./icons/poi.png"></div>
-    <div class="field"><textarea id="pprompt" placeholder="Prompt AI"></textarea></div>
+    <div class="row">
+      <div class="field">
+        <label>ID (μοναδικό)</label>
+        <input id="pid" placeholder="π.χ. agios_petros">
+      </div>
+      <div class="field">
+        <label>Τίτλος</label>
+        <input id="ptitle" placeholder="π.χ. Άγιος Πέτρος">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label>Latitude</label>
+        <input id="plat" placeholder="38.123456">
+      </div>
+      <div class="field">
+        <label>Longitude</label>
+        <input id="plng" placeholder="23.123456">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>PNG (relative path προτείνεται)</label>
+      <input id="ppng" placeholder="agios_petros.png ή ./icons/poi.png">
+      <div class="hint" style="margin-top:6px">Tip: Αφού το PNG είναι στο ίδιο folder με το index.html, γράψε: <b>agios_petros.png</b></div>
+    </div>
+
+    <div class="field">
+      <label>Κατηγορία μεγέθους (διάλεξε 1)</label>
+      <div class="sizes" id="sizeBox">
+        <label class="sizeItem">
+          <input type="checkbox" name="psize" value="S">
+          <div><b>Μικρό</b><br><small>για δευτερεύοντα σημεία</small></div>
+        </label>
+        <label class="sizeItem">
+          <input type="checkbox" name="psize" value="M" checked>
+          <div><b>Μεσαίο</b><br><small>default</small></div>
+        </label>
+        <label class="sizeItem">
+          <input type="checkbox" name="psize" value="L">
+          <div><b>Μεγάλο</b><br><small>σημαντικά POI</small></div>
+        </label>
+        <label class="sizeItem">
+          <input type="checkbox" name="psize" value="XL">
+          <div><b>Τεράστιο</b><br><small>landmarks</small></div>
+        </label>
+      </div>
+      <div class="hint">Είναι checkbox όπως ζήτησες, αλλά λειτουργεί “ένα ενεργό κάθε φορά”.</div>
+    </div>
+
+    <div class="field">
+      <label>Prompt AI</label>
+      <textarea id="pprompt" placeholder="Τι να λέει ο βοηθός όταν πατάς το POI"></textarea>
+    </div>
 
     <div class="controls">
-      <button class="btn soft" onclick="pickPoint()">Πάρε συντεταγμένες</button>
-      <button class="btn" onclick="preview()">Preview</button>
-      <button class="btn primary" onclick="savePOI()">Save</button>
-      <button class="btn danger" onclick="closeModal()">Close</button>
+      <button class="btn soft" onclick="pickPoint()">Πάρε συντεταγμένες από χάρτη</button>
+      <button class="btn" onclick="preview()">Preview marker</button>
+      <button class="btn primary" onclick="savePOI()">Save POI</button>
+      <button class="btn" onclick="exportPOI()">Export JSON</button>
+      <button class="btn danger" onclick="clearPreview()">Clear preview</button>
     </div>
+
+    <div class="hint" id="formError" style="color:#fca5a5;margin-top:10px"></div>
   </div>
 </div>
 
 <script>
-let map=L.map('map').setView([38.159,23.742],12);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+  // ===== Map init =====
+  const map = L.map('map').setView([38.159, 23.742], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
-let follow=false,userMarker=null,previewMarker=null,pois=[];
+  // ===== GPS =====
+  let follow = false;
+  let userMarker = null;
 
-function startGPS(){
-  map.locate({watch:true,enableHighAccuracy:true});
-}
-function stopGPS(){map.stopLocate();}
-function toggleFollow(){follow=!follow;}
+  function startGPS(){ map.locate({ watch:true, enableHighAccuracy:true }); }
+  function stopGPS(){ map.stopLocate(); }
+  function toggleFollow(){ follow = !follow; }
 
-map.on('locationfound',e=>{
-  if(!userMarker) userMarker=L.marker(e.latlng).addTo(map);
-  else userMarker.setLatLng(e.latlng);
-  if(follow) map.setView(e.latlng,16);
-});
-
-function openCode(){
-  let c=prompt("Κωδικός");
-  if(c==="1234") document.getElementById('modal').classList.add('open');
-}
-
-function closeModal(){
-  document.getElementById('modal').classList.remove('open');
-  if(previewMarker){map.removeLayer(previewMarker);previewMarker=null}
-}
-
-function pickPoint(){
-  closeModal();
-  map.once('click',e=>{
-    document.getElementById('plat').value=e.latlng.lat.toFixed(6);
-    document.getElementById('plng').value=e.latlng.lng.toFixed(6);
-    document.getElementById('modal').classList.add('open');
+  map.on('locationfound', e => {
+    if(!userMarker) userMarker = L.marker(e.latlng).addTo(map);
+    else userMarker.setLatLng(e.latlng);
+    if(follow) map.setView(e.latlng, Math.max(map.getZoom(), 15));
   });
-}
 
-function preview(){
-  if(previewMarker){map.removeLayer(previewMarker)}
-  let lat=+plat.value,lng=+plng.value,png=ppng.value;
-  let icon=L.icon({
-    iconUrl:png,
-    iconSize:[48,48],
-    iconAnchor:[24,48],
-    errorOverlayUrl:'https://leafletjs.com/examples/custom-icons/leaf-red.png'
+  // ===== Compass =====
+  const needle = document.getElementById('needle');
+  window.addEventListener('deviceorientation', e => {
+    if(e.alpha !== null) needle.style.transform = 'rotate(' + (360 - e.alpha) + 'deg)';
   });
-  previewMarker=L.marker([lat,lng],{icon}).addTo(map);
-  map.setView([lat,lng],15);
-}
 
-function savePOI(){
-  let p={
-    id:pid.value,title:ptitle.value,
-    coords:[+plat.value,+plng.value],
-    imageUrl:ppng.value,prompt:pprompt.value
+  // ===== POI data =====
+  const pois = []; // runtime only
+  let previewMarker = null;
+
+  // ===== Icon scaling =====
+  const SIZE_PRESETS = {
+    S: 0.75,
+    M: 1.00,
+    L: 1.30,
+    XL: 1.70
   };
-  let icon=L.icon({iconUrl:p.imageUrl,iconSize:[48,48],iconAnchor:[24,48]});
-  let m=L.marker(p.coords,{icon}).addTo(map);
-  m.on('click',()=>document.getElementById('info').innerText=p.prompt);
-  closeModal();
-}
 
-let needle=document.getElementById('needle');
-window.addEventListener('deviceorientation',e=>{
-  if(e.alpha!==null) needle.style.transform='rotate('+(360-e.alpha)+'deg)';
-});
+  const BASE_ICON_PX = 34;    // base at zoom=13
+  const ZOOM_REF = 13;
+  const ZOOM_EXP = 1.25;      // stronger = grows faster with zoom
+
+  function currentSizePx(sizeKey){
+    const z = map.getZoom();
+    const preset = SIZE_PRESETS[sizeKey] || 1.0;
+    const zoomScale = Math.pow(z / ZOOM_REF, ZOOM_EXP);
+    const px = Math.round(BASE_ICON_PX * preset * zoomScale);
+    return Math.max(18, Math.min(px, 110)); // clamp
+  }
+
+  function normalizePngPath(png){
+    // allow: agios_petros.png OR ./agios_petros.png OR full URL
+    if(!png) return png;
+    png = String(png).trim();
+    if(png.startsWith('http://') || png.startsWith('https://') || png.startsWith('data:')) return png;
+    if(png.startsWith('./')) return png;
+    if(png.startsWith('/')) return '.' + png; // make it relative
+    return png; // root-relative file next to index.html
+  }
+
+  function makeIcon(url, sizeKey){
+    const px = currentSizePx(sizeKey);
+    return L.icon({
+      iconUrl: normalizePngPath(url),
+      iconSize: [px, px],
+      iconAnchor: [Math.round(px/2), px],
+      // debug fallback if image can't load
+      errorOverlayUrl: 'https://leafletjs.com/examples/custom-icons/leaf-red.png'
+    });
+  }
+
+  function updateAllIcons(){
+    const z = map.getZoom();
+    pois.forEach(p => {
+      if(p._marker){
+        p._marker.setIcon(makeIcon(p.imageUrl, p.sizeKey));
+      }
+    });
+    if(previewMarker && previewMarker._poiDraft){
+      const d = previewMarker._poiDraft;
+      previewMarker.setIcon(makeIcon(d.imageUrl, d.sizeKey));
+    }
+  }
+
+  map.on('zoomend', updateAllIcons);
+
+  // ===== UI / Modal =====
+  const modal = document.getElementById('modal');
+  const formError = document.getElementById('formError');
+  const info = document.getElementById('info');
+
+  function openCode(){
+    const c = prompt('Κωδικός');
+    if(c === '1234'){
+      formError.textContent = '';
+      modal.classList.add('open');
+    }
+  }
+
+  function closeModal(){
+    modal.classList.remove('open');
+  }
+
+  // Checkbox group behaves like single-choice
+  function getSizeKey(){
+    const boxes = Array.from(document.querySelectorAll('input[name="psize"]'));
+    const checked = boxes.find(b => b.checked);
+    return checked ? checked.value : 'M';
+  }
+  function setSizeKey(key){
+    const boxes = Array.from(document.querySelectorAll('input[name="psize"]'));
+    boxes.forEach(b => b.checked = (b.value === key));
+  }
+  (function enforceSingleCheckbox(){
+    const boxes = Array.from(document.querySelectorAll('input[name="psize"]'));
+    boxes.forEach(b => {
+      b.addEventListener('change', () => {
+        if(b.checked){
+          boxes.forEach(o => { if(o !== b) o.checked = false; });
+        } else {
+          // never allow "none", keep at least one
+          setSizeKey('M');
+        }
+        // live preview update if exists
+        if(previewMarker) updateAllIcons();
+      });
+    });
+  })();
+
+  function clearPreview(){
+    if(previewMarker){
+      try{ map.removeLayer(previewMarker); } catch(e){}
+      previewMarker = null;
+    }
+  }
+
+  // Pick point: close modal temporarily, click map once, reopen modal
+  function pickPoint(){
+    formError.textContent = '';
+    closeModal();
+
+    info.textContent = 'Κάνε 1 κλικ στον χάρτη για να πάρεις συντεταγμένες...';
+
+    map.once('click', e => {
+      document.getElementById('plat').value = e.latlng.lat.toFixed(6);
+      document.getElementById('plng').value = e.latlng.lng.toFixed(6);
+      modal.classList.add('open');
+      info.textContent = 'ΟΚ. Πάτα Preview ή Save.';
+      preview(); // auto preview after pick
+      map.panTo(e.latlng);
+    });
+  }
+
+  function readDraft(){
+    const id = (pid.value || '').trim();
+    const title = (ptitle.value || '').trim();
+    const lat = parseFloat(plat.value);
+    const lng = parseFloat(plng.value);
+    const png = (ppng.value || '').trim();
+    const prompt = (pprompt.value || '').trim();
+    const sizeKey = getSizeKey();
+
+    if(!Number.isFinite(lat) || !Number.isFinite(lng)) return { error:'Βάλε σωστά lat/lng.' };
+    if(!png) return { error:'Βάλε PNG path/URL.' };
+
+    return {
+      id, title,
+      coords:[lat,lng],
+      imageUrl: png,
+      prompt: prompt || ('Πληροφορίες για: ' + (title || id || 'σημείο')),
+      sizeKey
+    };
+  }
+
+  function preview(){
+    formError.textContent = '';
+
+    const d = readDraft();
+    if(d.error){
+      formError.textContent = d.error;
+      return;
+    }
+
+    clearPreview();
+
+    const icon = makeIcon(d.imageUrl, d.sizeKey);
+    previewMarker = L.marker(d.coords, { icon, opacity: 0.85 }).addTo(map);
+    previewMarker._poiDraft = d;
+
+    map.setView(d.coords, Math.max(map.getZoom(), 15));
+  }
+
+  function savePOI(){
+    formError.textContent = '';
+
+    const d = readDraft();
+    if(d.error){
+      formError.textContent = d.error;
+      return;
+    }
+
+    if(!d.id){
+      formError.textContent = 'Βάλε ID (μοναδικό).';
+      return;
+    }
+    if(pois.some(x => x.id === d.id)){
+      formError.textContent = 'Υπάρχει ήδη POI με αυτό το ID.';
+      return;
+    }
+    if(!d.title){
+      formError.textContent = 'Βάλε τίτλο.';
+      return;
+    }
+
+    const p = { ...d };
+
+    const m = L.marker(p.coords, { icon: makeIcon(p.imageUrl, p.sizeKey) }).addTo(map);
+    p._marker = m;
+
+    m.on('click', () => {
+      info.textContent = p.prompt;
+    });
+
+    pois.push(p);
+
+    clearPreview();
+    closeModal();
+    info.textContent = 'POI αποθηκεύτηκε (runtime). Πάτα πάνω του για info.';
+  }
+
+  function exportPOI(){
+    alert(JSON.stringify(pois.map(p => ({
+      id:p.id, title:p.title, coords:p.coords, imageUrl:p.imageUrl, prompt:p.prompt, sizeKey:p.sizeKey
+    })), null, 2));
+  }
 </script>
 
 </body>
