@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Πάρνηθα | Διαδραστικός Χάρτης</title>
 
-  <!-- Leaflet (jsDelivr primary, unpkg fallback via loader) -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+
   <script>
     (function(){
       function loadCss(href){
@@ -36,7 +36,6 @@
       --text:#e8edf6;
       --muted:#a6b2c5;
       --danger:#ef4444;
-      --ok:#22c55e;
       --border:rgba(255,255,255,.08);
       --shadow: 0 10px 30px rgba(0,0,0,.35);
       --radius:16px;
@@ -48,7 +47,6 @@
       background: var(--bg);
       color: var(--text);
     }
-
     .wrap{
       display:grid;
       grid-template-columns: 1fr 360px;
@@ -56,7 +54,6 @@
       gap: 10px;
       padding: 10px;
     }
-
     #map{
       border-radius: var(--radius);
       overflow:hidden;
@@ -65,7 +62,6 @@
       position: relative;
       min-height: 320px;
     }
-
     #mapLoading{
       position:absolute;
       inset:0;
@@ -79,7 +75,6 @@
       z-index:50;
       user-select:none;
     }
-
     .panel{
       border-radius: var(--radius);
       box-shadow: var(--shadow);
@@ -90,7 +85,6 @@
       flex-direction:column;
       min-width: 320px;
     }
-
     .panel-header{
       padding: 14px 14px 10px;
       border-bottom:1px solid var(--border);
@@ -100,7 +94,6 @@
       gap:10px;
     }
     .panel-header h3{ margin:0; font-size: 15px; letter-spacing:.2px; }
-
     .badge{
       font-size:12px;
       padding: 6px 10px;
@@ -110,10 +103,8 @@
       background: rgba(255,255,255,.03);
       white-space:nowrap;
     }
-
     .panel-body{ padding: 14px; overflow:auto; flex:1; }
     .hint{ color: var(--muted); font-size: 13px; line-height: 1.45; }
-
     .controls{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
     .btn{
       appearance:none;
@@ -128,7 +119,6 @@
     }
     .btn.primary{ background: rgba(34,197,94,.14); border-color: rgba(34,197,94,.25); }
     .btn.danger{ background: rgba(239,68,68,.14); border-color: rgba(239,68,68,.25); }
-
     .card{
       border:1px solid var(--border);
       border-radius: 14px;
@@ -136,8 +126,6 @@
       background: rgba(255,255,255,.03);
       margin-top: 10px;
     }
-
-    /* Compass overlay */
     .compass{
       position:absolute;
       top: 12px;
@@ -174,8 +162,6 @@
       opacity:.85;
       bottom: 12px;
     }
-
-    /* Modal */
     .modal{
       position: fixed;
       inset: 0;
@@ -205,7 +191,6 @@
     }
     .modal-head h4{ margin:0; font-size: 14px; }
     .modal-body{ padding: 14px; }
-
     .row{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
     .row3{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; }
     .field{ display:flex; flex-direction:column; gap:6px; }
@@ -221,7 +206,6 @@
       font-size: 13px;
     }
     textarea{ min-height: 92px; resize: vertical; }
-
     @media (max-width: 980px){
       .wrap{ grid-template-columns: 1fr; grid-template-rows: 60vh 1fr; }
       .panel{ min-width: unset; }
@@ -249,7 +233,6 @@
     </aside>
   </div>
 
-  <!-- Admin Modal -->
   <div class="modal" id="adminModal" aria-hidden="true">
     <div class="modal-card" role="dialog" aria-modal="true" aria-label="POI form">
       <div class="modal-head">
@@ -268,19 +251,6 @@
       var mapLoadingEl = document.getElementById('mapLoading');
 
       function setStatus(t){ statusEl.textContent = t; }
-
-      function esc(s){
-        return String(s || '')
-          .replace(/&/g,'&amp;')
-          .replace(/</g,'&lt;')
-          .replace(/>/g,'&gt;')
-          .replace(/\"/g,'&quot;')
-          .replace(/'/g,'&#039;');
-      }
-
-      // =========================
-      // UI builders
-      // =========================
       function el(tag, attrs){
         var node = document.createElement(tag);
         if(attrs){
@@ -292,42 +262,15 @@
         }
         return node;
       }
+      function clear(node){ while(node.firstChild) node.removeChild(node.firstChild); }
 
-      function clear(node){
-        while(node.firstChild) node.removeChild(node.firstChild);
-      }
-
-      // =========================
-      // State
-      // =========================
       var followMode = false;
       var userMarker = null;
       var accuracyCircle = null;
 
-      // =========================
-      // Storage
-      // =========================
-      var LS_KEY = 'edpa_pois_v1';
-      function loadStoredPOIs(){
-        try{
-          var raw = localStorage.getItem(LS_KEY);
-          if(!raw) return [];
-          var arr = JSON.parse(raw);
-          return Array.isArray(arr) ? arr : [];
-        } catch(e){
-          return [];
-        }
-      }
-      function saveStoredPOIs(arr){
-        try{ localStorage.setItem(LS_KEY, JSON.stringify(arr)); } catch(e){}
-      }
-
-      // Markers registry
+      var storedPOIs = [];
       var markersById = new Map();
 
-      // =========================
-      // Map init
-      // =========================
       var map = null;
 
       function hideLoading(){
@@ -338,7 +281,7 @@
         if(!window.L){
           setStatus('Leaflet blocked');
           clear(panelBodyEl);
-          var msg = el('div', { class: 'hint', text: 'Δεν φορτώθηκε το Leaflet. Αν είσαι σε περιβάλλον που μπλοκάρει CDN, θέλει local bundle.' });
+          var msg = el('div', { class: 'hint', text: 'Δεν φορτώθηκε το Leaflet. Αν μπλοκάρεται CDN, θέλει local bundle.' });
           msg.style.color = 'rgba(239,68,68,.95)';
           panelBodyEl.appendChild(msg);
           return;
@@ -375,20 +318,15 @@
         setTimeout(function(){ map.invalidateSize(); }, 60);
         setTimeout(hideLoading, 1200);
 
-        // GPS handlers
         map.on('locationfound', onLocationFound);
         map.on('locationerror', function(){
           setStatus('GPS error');
           alert('Δεν μπορώ να πάρω GPS θέση. Έλεγξε άδειες τοποθεσίας στον browser.');
         });
 
-        // Load saved POIs
-        loadStoredPOIs().forEach(addPngMarker);
+        storedPOIs.forEach(addPngMarker);
       }
 
-      // =========================
-      // GPS
-      // =========================
       function makeDotIcon(){
         return L.divIcon({
           className: '',
@@ -434,9 +372,6 @@
         setStatus('GPS OK');
       }
 
-      // =========================
-      // POIs
-      // =========================
       function addPngMarker(p){
         if(!map) return null;
         if(!p || !p.imageUrl || !p.coords) return null;
@@ -455,10 +390,8 @@
       }
 
       function addPoiRuntime(p){
+        storedPOIs.push(p);
         addPngMarker(p);
-        var current = loadStoredPOIs();
-        current.push(p);
-        saveStoredPOIs(current);
       }
 
       function removePoiRuntime(id){
@@ -467,17 +400,13 @@
           map.removeLayer(m);
           markersById.delete(id);
         }
-        var current = loadStoredPOIs().filter(function(x){ return x && x.id !== id; });
-        saveStoredPOIs(current);
+        storedPOIs = storedPOIs.filter(function(x){ return x && x.id !== id; });
       }
 
       function exportPois(){
-        return JSON.stringify(loadStoredPOIs(), null, 2);
+        return JSON.stringify(storedPOIs, null, 2);
       }
 
-      // =========================
-      // Assistant (mock)
-      // =========================
       function mockAI(prompt){
         return new Promise(function(res){
           setTimeout(function(){
@@ -512,7 +441,8 @@
         panelBodyEl.appendChild(controls);
 
         var card = el('div', { class: 'card' });
-        card.innerHTML = '<h4 style="margin:0 0 8px;font-size:14px">' + esc(point.title || point.id || 'Σημείο') + '</h4>' +
+        card.innerHTML =
+          '<h4 style="margin:0 0 8px;font-size:14px">' + (point.title || point.id || 'Σημείο') + '</h4>' +
           '<div class="hint">Συντεταγμένες: ' + Number(point.coords[0]).toFixed(5) + ', ' + Number(point.coords[1]).toFixed(5) + '</div>';
         panelBodyEl.appendChild(card);
 
@@ -521,7 +451,6 @@
         h.style.margin = '0 0 8px';
         h.style.fontSize = '14px';
         var aiText = el('div', { class: 'hint', text: 'Ζητάω από τον βοηθό...' });
-        aiText.id = 'aiText';
         aiCard.appendChild(h);
         aiCard.appendChild(aiText);
         panelBodyEl.appendChild(aiCard);
@@ -533,14 +462,12 @@
         });
       }
 
-      // =========================
-      // Admin modal (code-gated)
-      // =========================
       var ADMIN_CODE = '1234';
 
       var adminModal = document.getElementById('adminModal');
       var modalBody = document.getElementById('modalBody');
       var modalTitle = document.getElementById('modalTitle');
+
       document.getElementById('btnCloseModal').addEventListener('click', closeModal);
       adminModal.addEventListener('click', function(e){ if(e.target === adminModal) closeModal(); });
 
@@ -600,7 +527,7 @@
       function showPoiForm(){
         openModal('POI: Νέο σημείο');
 
-        modalBody.appendChild(el('div', { class: 'hint', text: 'Συμπλήρωσε τα στοιχεία POI. Μετά το Save, το PNG marker μπαίνει στον χάρτη και αποθηκεύεται στον browser.' }));
+        modalBody.appendChild(el('div', { class: 'hint', text: 'Συμπλήρωσε στοιχεία POI. Μετά το Save μπαίνει PNG marker και ανοίγει ο βοηθός.' }));
 
         function parsePair(s){
           var parts = String(s || '').split(',').map(function(x){ return parseInt(x.trim(), 10); });
@@ -652,7 +579,7 @@
         row3.appendChild(fAnchor.wrap);
         modalBody.appendChild(row3);
 
-        var fPrompt = makeField('Prompt (τι θα πει ο βοηθός)', 'Πληροφορίες για το σημείο...', 'textarea');
+        var fPrompt = makeField('Prompt', 'Πληροφορίες για το σημείο...', 'textarea');
         fPrompt.wrap.style.marginTop = '10px';
         modalBody.appendChild(fPrompt.wrap);
 
@@ -664,55 +591,9 @@
         var controls = el('div', { class: 'controls' });
         var bSave = el('button', { class: 'btn primary', text: 'Save POI' });
         var bExport = el('button', { class: 'btn', text: 'Export JSON' });
-        var bClear = el('button', { class: 'btn danger', text: 'Clear saved' });
         controls.appendChild(bSave);
         controls.appendChild(bExport);
-        controls.appendChild(bClear);
         modalBody.appendChild(controls);
-
-        var listCard = el('div', { class: 'card' });
-        listCard.innerHTML = '<h4 style="margin:0 0 8px;font-size:14px">Αποθηκευμένα POIs</h4>';
-        var list = el('div', { class: 'hint', text: 'Φόρτωση...' });
-        list.id = 'poiList';
-        listCard.appendChild(list);
-        modalBody.appendChild(listCard);
-
-        function renderList(){
-          var arr = loadStoredPOIs();
-          if(!arr.length){
-            list.textContent = 'Δεν υπάρχουν αποθηκευμένα POIs σε αυτόν τον browser.';
-            return;
-          }
-          list.innerHTML = '';
-          arr.forEach(function(p){
-            var line = el('div');
-            line.style.display = 'flex';
-            line.style.justifyContent = 'space-between';
-            line.style.alignItems = 'center';
-            line.style.gap = '10px';
-            line.style.margin = '6px 0';
-
-            var left = el('div');
-            var strong = el('strong', { text: p.title || p.id || 'POI' });
-            left.appendChild(strong);
-            var small = el('div', { class: 'hint', text: p.id || '' });
-            small.style.marginTop = '2px';
-            left.appendChild(small);
-
-            var del = el('button', { class: 'btn danger', text: 'Διαγραφή' });
-            del.onclick = function(){
-              if(!p.id) return;
-              removePoiRuntime(p.id);
-              renderList();
-            };
-
-            line.appendChild(left);
-            line.appendChild(del);
-            list.appendChild(line);
-          });
-        }
-
-        renderList();
 
         bSave.onclick = function(){
           err.textContent = '';
@@ -730,9 +611,8 @@
           if(!Number.isFinite(lat) || !Number.isFinite(lng)){ err.textContent = 'Βάλε σωστά lat/lng.'; return; }
           if(!png){ err.textContent = 'Βάλε PNG URL.'; return; }
 
-          var existing = loadStoredPOIs();
-          if(existing.some(function(x){ return x && x.id === id; })){
-            err.textContent = 'Υπάρχει ήδη POI με αυτό το ID.';
+          if(storedPOIs.some(function(x){ return x && x.id === id; })){
+            err.textContent = 'Υπάρχει ήδη POI με αυτό το ID (runtime).';
             return;
           }
 
@@ -760,32 +640,10 @@
 
         bExport.onclick = function(){
           var json = exportPois();
-          if(navigator.clipboard && navigator.clipboard.writeText){
-            navigator.clipboard.writeText(json).then(function(){
-              alert('Έγινε αντιγραφή του JSON στο clipboard.');
-            }).catch(function(){
-              alert('JSON:
-
-' + json);
-            });
-          } else {
-            alert('JSON:
-
-' + json);
-          }
-        };
-
-        bClear.onclick = function(){
-          if(!confirm('Να σβηστούν όλα τα αποθηκευμένα POIs από αυτόν τον browser;')) return;
-          loadStoredPOIs().forEach(function(p){ if(p && p.id) removePoiRuntime(p.id); });
-          saveStoredPOIs([]);
-          renderList();
+          alert('JSON:\n\n' + json);
         };
       }
 
-      // =========================
-      // Home panel
-      // =========================
       function renderHome(){
         panelTitleEl.textContent = 'AI Βοηθός Πάρνηθας';
         clear(panelBodyEl);
@@ -812,14 +670,11 @@
         controls.appendChild(bAdmin);
         panelBodyEl.appendChild(controls);
 
-        var note = el('div', { class: 'hint', text: 'Τα POI αποθηκεύονται τοπικά (browser). Για κοινή βάση δεδομένων το συνδέουμε μετά με API.' });
+        var note = el('div', { class: 'hint', text: 'POI αποθήκευση: runtime. Μετά το γυρνάμε σε API/βάση.' });
         note.style.marginTop = '10px';
         panelBodyEl.appendChild(note);
       }
 
-      // =========================
-      // Compass
-      // =========================
       var needle = document.getElementById('needle');
       var compassEnabled = false;
 
@@ -851,16 +706,12 @@
 
       document.body.addEventListener('click', enableCompassIfPossible, { once:true });
 
-      // =========================
-      // Boot
-      // =========================
       renderHome();
       setStatus('έτοιμος');
 
       if(window.__ensureLeaflet) window.__ensureLeaflet(initMap);
       else initMap();
 
-      // Safety: never keep loading overlay forever
       setTimeout(hideLoading, 2500);
     })();
   </script>
